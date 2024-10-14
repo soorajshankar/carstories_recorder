@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const { spawn } = require("child_process");
+const socialMediaPublisher = require("./socialMediaPublisher");
 
 (async () => {
   let browser;
@@ -96,6 +97,21 @@ const { spawn } = require("child_process");
     }
     process.exit(1);
   }
+
+  async function publishToSocialMedia(videoPath) {
+    try {
+      const caption = "Check out this amazing car! #CarStories #MarutiSwift";
+      const mediaId = await socialMediaPublisher.publish(
+        "instagram",
+        videoPath,
+        caption
+      );
+      console.log(`Successfully published to Instagram. Media ID: ${mediaId}`);
+    } catch (error) {
+      console.error("Error publishing to social media:", error);
+    }
+  }
+
   function addAudioToVideo(videoPath) {
     const outputWithAudio = "output_with_audio.mp4";
     const audioFile = "bg.mp3";
@@ -134,8 +150,7 @@ const { spawn } = require("child_process");
       console.log(`Child process exited with code ${code}`);
       if (code === 0) {
         console.log("Video with looped audio saved successfully");
-        // Optionally, you can delete the original video without audio
-        // fs.unlinkSync(videoPath);
+        // publishToSocialMedia(outputWithAudio);
       } else {
         console.error("Error adding looped audio to video");
       }

@@ -1,12 +1,30 @@
-const { IgApiClient, IgCheckpointError } = require("instagram-private-api");
+const { IgApiClient, IgCheckpointError, IgNoCheckpointError } = require("instagram-private-api");
 const { readFile } = require("fs").promises;
+const { google } = require("googleapis");
+const fs = require("fs");
 
+async function getAccessToken() {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.YOUTUBE_CLIENT_ID,
+    process.env.YOUTUBE_CLIENT_SECRET,
+    process.env.YOUTUBE_REDIRECT_URI
+  );
+
+  // Set credentials with refresh token
+  oauth2Client.setCredentials({
+    refresh_token: process.env.YOUTUBE_REFRESH_TOKEN,
+  });
+
+  // Automatically refresh the access token
+  const tokens = await oauth2Client.refreshAccessToken();
+  return tokens.credentials.access_token;
+}
 class SocialMediaPublisher {
   constructor() {
     this.platforms = {
       instagram: this.publishToInstagram,
+      youtube: this.publishToYoutube,
       // Add more platforms here in the future
-      // youtube: this.publishToYoutube,
       // facebook: this.publishToFacebook,
       // twitter: this.publishToTwitter,
     };
@@ -19,8 +37,10 @@ class SocialMediaPublisher {
       throw new Error(`Unsupported platform: ${platform}`);
     }
   }
+
   async publishToInstagram(videoPath, caption) {
     const ig = new IgApiClient();
+    console.log("Generating device...", process.env.IG_USERNAME);
     ig.state.generateDevice(process.env.IG_USERNAME);
 
     try {
@@ -60,8 +80,59 @@ class SocialMediaPublisher {
     }
   }
 
+
+  
+  async publishToYoutube(videoPath, caption) {
+    try {
+      const accessToken = await getAccessToken();
+  
+      const youtube = google.youtube({
+        version: "v3",
+        auth: accessToken,
+      });
+  
+      // Insert the video
+      const videoInsertResponse = await youtube.videos.insert({
+        part: "snippet,status",
+        requestBody: {
+          snippet: {
+            title: caption,
+            description: caption,
+            tags: ["#Shorts"],
+            categoryId: "22",
+          },
+          status: {
+            privacyStatus: "public",
+            selfDeclaredMadeForKids: false,
+          },
+        },
+        media: {
+          body: fs.createReadStream(videoPath),
+        },
+      });
+  
+      const videoId = videoInsertResponse.data.id;
+  
+      // Set the video as a Short
+      await youtube.videos.update({
+        part: "snippet",
+        requestBody: {
+          id: videoId,
+          snippet: {
+            tags: ["#Shorts"],
+          },
+        },
+      });
+  
+      console.log(`Video published to YouTube. Video ID: ${videoId}`);
+      return videoId;
+    } catch (error) {
+      console.error("Error publishing to YouTube:", error);
+      throw error;
+    }
+  }
+
   // Add methods for other platforms here
-  // async publishToYoutube(videoPath, caption) { ... }
   // async publishToFacebook(videoPath, caption) { ... }
   // async publishToTwitter(videoPath, caption) { ... }
 }

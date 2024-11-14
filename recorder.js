@@ -2,11 +2,33 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const socialMediaPublisher = require("./socialMediaPublisher");
+const path = require("path"); // Add path module
+
+const carName = "BYD_Seal";
+
+// Create output directory structure
+const outputDir = path.join("output", carName);
+fs.mkdirSync(outputDir, { recursive: true });
+
+async function publishToSocialMedia(videoPath) {
+  try {
+    const caption = "Check out this amazing car! #CarStories #MarutiSwift";
+    const mediaId = await socialMediaPublisher.publishToInstagram(
+      videoPath,
+      caption
+    );
+    console.log(`Successfully published to Instagram. Media ID: ${mediaId}`);
+  } catch (error) {
+    console.error("Error publishing to social media:", error);
+  }
+}
 
 (async () => {
   let browser;
   try {
-    console.log("Launching browser...");
+    console.log("Launching browsers...");
+    const outputWithAudio = path.join(outputDir, "output_with_audio.mp4");
+
     browser = await puppeteer.launch({
       headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -14,19 +36,18 @@ const socialMediaPublisher = require("./socialMediaPublisher");
     const page = await browser.newPage();
 
     console.log("Setting viewport...");
+    // Updated viewport settings for Instagram Reels/YouTube Shorts
     await page.setViewport({
-      width: 414,
-      height: 896,
+      width: 1080/2,
+      height: 1920/2,
     });
 
-    const url =
-      "https://carstories.in/car/Maruti_Swift?variant=Maruti_Swift_ZXi_Plus_AMT_DT";
+    const url = `https://carstories.in/car/${carName}`;
     console.log(`Navigating to ${url}...`);
 
-    // Set a timeout for navigation
     await page.goto(url, {
       waitUntil: "networkidle0",
-      timeout: 60000, // 60 seconds timeout
+      timeout: 60000,
     });
 
     console.log("Page loaded successfully.");
@@ -40,7 +61,7 @@ const socialMediaPublisher = require("./socialMediaPublisher");
     });
 
     const frames = [];
-    const framesToCapture = 60 * 30; // 60 seconds * 30 fps
+    const framesToCapture = 60 * 30;
     let frameCount = 0;
 
     client.on("Page.screencastFrame", async (frame) => {
@@ -57,14 +78,14 @@ const socialMediaPublisher = require("./socialMediaPublisher");
     });
 
     console.log("Recording for 60 seconds...");
-    await new Promise((resolve) => setTimeout(resolve, 62000)); // Wait slightly longer to ensure all frames are captured
+    await new Promise((resolve) => setTimeout(resolve, 62000));
 
     console.log("Saving video...");
     const ffmpeg = require("fluent-ffmpeg");
     const stream = require("stream");
 
     const inputStream = new stream.PassThrough();
-    const outputFilePath = "output.mp4";
+    const outputFilePath = path.join(outputDir, "output.mp4"); // Modified path
 
     ffmpeg(inputStream)
       .inputFormat("image2pipe")
@@ -73,8 +94,8 @@ const socialMediaPublisher = require("./socialMediaPublisher");
       .videoCodec("libx264")
       .videoBitrate("1500k")
       .outputOptions("-pix_fmt yuv420p")
-      .outputOptions("-t", "60") // Limit output to 60 seconds
-      .outputOptions("-y") // Overwrite output file without prompting
+      .outputOptions("-t", "60")
+      .outputOptions("-y")
       .on("end", () => {
         console.log("Video saved successfully");
         addAudioToVideo(outputFilePath);
@@ -98,22 +119,8 @@ const socialMediaPublisher = require("./socialMediaPublisher");
     process.exit(1);
   }
 
-  async function publishToSocialMedia(videoPath) {
-    try {
-      const caption = "Check out this amazing car! #CarStories #MarutiSwift";
-      const mediaId = await socialMediaPublisher.publish(
-        "instagram",
-        videoPath,
-        caption
-      );
-      console.log(`Successfully published to Instagram. Media ID: ${mediaId}`);
-    } catch (error) {
-      console.error("Error publishing to social media:", error);
-    }
-  }
-
   function addAudioToVideo(videoPath) {
-    const outputWithAudio = "output_with_audio.mp4";
+    const outputWithAudio = path.join(outputDir, "output_with_audio.mp4"); // Modified path
     const audioFile = "bg.mp3";
 
     const ffmpeg = spawn("ffmpeg", [
@@ -133,7 +140,7 @@ const socialMediaPublisher = require("./socialMediaPublisher");
       "1:a:0",
       "-shortest",
       "-t",
-      "60", // Limit output to 60 seconds
+      "60",
       "-y",
       outputWithAudio,
     ]);
@@ -150,7 +157,7 @@ const socialMediaPublisher = require("./socialMediaPublisher");
       console.log(`Child process exited with code ${code}`);
       if (code === 0) {
         console.log("Video with looped audio saved successfully");
-        // publishToSocialMedia(outputWithAudio);
+        publishToSocialMedia(outputWithAudio);
       } else {
         console.error("Error adding looped audio to video");
       }

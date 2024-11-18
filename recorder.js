@@ -36,10 +36,12 @@ async function publishToSocialMedia(videoPath) {
     const page = await browser.newPage();
 
     console.log("Setting viewport...");
+
+    const scaleFactor = 50;
     // Updated viewport settings for Instagram Reels/YouTube Shorts
     await page.setViewport({
-      width: 1080/2,
-      height: 1920/2,
+      width: Math.round(9 * scaleFactor),
+      height: Math.round(16 * scaleFactor),
     });
 
     const url = `https://carstories.in/car/${carName}`;

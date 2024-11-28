@@ -4,30 +4,24 @@ const { spawn } = require("child_process");
 const socialMediaPublisher = require("./socialMediaPublisher");
 const path = require("path"); // Add path module
 
-
-// Get command line arguments
-const args = process.argv.slice(2);
-
-// Check if there are any arguments
-if (args.length === 0) {
-    console.error("Please provide a car name!");
-    console.log("Usage: node script.js <car_name>");
-    console.log("Example: node script.js Tesla_Model_3");
-    process.exit(1);
-}
-
-// Get carName from first argument
-const carName = args[0];
-
-// Validate carName (optional)
-if (!/^[A-Za-z0-9_]+$/.test(carName)) {
-    console.error("Car name should only contain letters, numbers, and underscores!");
-    process.exit(1);
-}
+const carName = "BYD_Seal";
 
 // Create output directory structure
 const outputDir = path.join("output", carName);
 fs.mkdirSync(outputDir, { recursive: true });
+
+async function publishToSocialMedia(videoPath) {
+  try {
+    const caption = "Check out this amazing car! #CarStories #MarutiSwift";
+    const mediaId = await socialMediaPublisher.publishToInstagram(
+      videoPath,
+      caption
+    );
+    console.log(`Successfully published to Instagram. Media ID: ${mediaId}`);
+  } catch (error) {
+    console.error("Error publishing to social media:", error);
+  }
+}
 
 (async () => {
   let browser;
@@ -72,8 +66,8 @@ fs.mkdirSync(outputDir, { recursive: true });
       }
     });
 
-    const url = `https://carstories.in/car/${carName}`;
-    // const url = `http://localhost:2277/car/${carName}`;
+    // const url = `https://carstories.in/car/${carName}`;
+    const url = `http://localhost:2277/car/${carName}`;
     console.log(`Navigating to ${url}...`);
 
     // Navigate AFTER starting the recording

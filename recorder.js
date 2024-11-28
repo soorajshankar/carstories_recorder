@@ -4,16 +4,15 @@ const { spawn } = require("child_process");
 const socialMediaPublisher = require("./socialMediaPublisher");
 const path = require("path"); // Add path module
 
-
 // Get command line arguments
 const args = process.argv.slice(2);
 
 // Check if there are any arguments
 if (args.length === 0) {
-    console.error("Please provide a car name!");
-    console.log("Usage: node script.js <car_name>");
-    console.log("Example: node script.js Tesla_Model_3");
-    process.exit(1);
+  console.error("Please provide a car name!");
+  console.log("Usage: node script.js <car_name>");
+  console.log("Example: node script.js Tesla_Model_3");
+  process.exit(1);
 }
 
 // Get carName from first argument
@@ -21,8 +20,10 @@ const carName = args[0];
 
 // Validate carName (optional)
 if (!/^[A-Za-z0-9_]+$/.test(carName)) {
-    console.error("Car name should only contain letters, numbers, and underscores!");
-    process.exit(1);
+  console.error(
+    "Car name should only contain letters, numbers, and underscores!"
+  );
+  process.exit(1);
 }
 
 // Create output directory structure
@@ -42,8 +43,9 @@ fs.mkdirSync(outputDir, { recursive: true });
     console.log("Setting viewport...");
     const scaleFactor = 100;
     await page.setViewport({
-      width: Math.round(9 * scaleFactor),
-      height: Math.round(16 * scaleFactor),
+      width: 900, // Changed to explicit values
+      height: 1600,
+      deviceScaleFactor: 1,
     });
 
     // Start recording BEFORE navigation
@@ -91,17 +93,32 @@ fs.mkdirSync(outputDir, { recursive: true });
     const stream = require("stream");
 
     const inputStream = new stream.PassThrough();
-    const outputFilePath = path.join(outputDir, "output_without_audio.mp4"); // Modified path
+    const outputFilePath = path.join(outputDir, "output_without_audio.mp4");
 
     ffmpeg(inputStream)
       .inputFormat("image2pipe")
       .inputFPS(30)
       .output(outputFilePath)
       .videoCodec("libx264")
-      .videoBitrate("1500k")
-      .outputOptions("-pix_fmt yuv420p")
-      .outputOptions("-t", "60")
-      .outputOptions("-y")
+      .size("900x1600") // Add explicit size matching your viewport
+      .videoBitrate("2000k")
+      .outputOptions([
+        "-pix_fmt",
+        "yuv420p",
+        "-preset",
+        "medium",
+        "-movflags",
+        "+faststart",
+        "-t",
+        "60",
+        "-y",
+      ])
+      .on("start", (commandLine) => {
+        console.log("FFmpeg process started:", commandLine);
+      })
+      .on("progress", (progress) => {
+        console.log("Processing: " + progress.percent + "% done");
+      })
       .on("end", () => {
         console.log("Video saved successfully");
         addAudioToVideo(outputFilePath);

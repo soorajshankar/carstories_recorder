@@ -1,5 +1,7 @@
 node_modules
-output
+## ignore files under output directory that ends with *_without_audio.mp4
+*_without_audio.mp4
+
 **.DS_Store
 service-account-key.json
 .env

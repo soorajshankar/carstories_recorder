@@ -91,7 +91,7 @@ fs.mkdirSync(outputDir, { recursive: true });
     const stream = require("stream");
 
     const inputStream = new stream.PassThrough();
-    const outputFilePath = path.join(outputDir, "output.mp4"); // Modified path
+    const outputFilePath = path.join(outputDir, "output_without_audio.mp4"); // Modified path
 
     ffmpeg(inputStream)
       .inputFormat("image2pipe")
@@ -163,7 +163,6 @@ fs.mkdirSync(outputDir, { recursive: true });
       console.log(`Child process exited with code ${code}`);
       if (code === 0) {
         console.log("Video with looped audio saved successfully");
-        publishToSocialMedia(outputWithAudio);
       } else {
         console.error("Error adding looped audio to video");
       }

@@ -1,0 +1,31 @@
+name: Process Cars Daily
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs at 00:00 UTC every day
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  process-cars:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Process next unprocessed car
+        run: node processNextCar.js
+
+      - name: Commit and push if changes exist
+        run: |
+          git config --global user.name 'soorajshankar'
+          git config --global user.email 'soorajshankar@gmail.com'
+          git add carList.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Process next car" && git push)

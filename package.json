@@ -17,6 +17,7 @@
     "googleapis": "^144.0.0",
     "instagram-private-api": "^1.46.1",
     "open": "^10.1.0",
+    "playwright": "^1.49.1",
     "puppeteer": "^23.5.3",
     "stream": "^0.0.3"
   }

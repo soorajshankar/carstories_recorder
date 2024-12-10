@@ -5,9 +5,8 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
-# Add this permissions block at the workflow level
 permissions:
-  contents: write  # This is important for pushing changes
+  contents: write
 
 jobs:
   process-cars:
@@ -28,6 +27,21 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      # Add these steps for Playwright
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      # Optional: Install additional dependencies that Playwright might need
+      - name: Install Playwright system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm-dev
+          sudo apt-get install -y libxkbcommon-x11-0
+          sudo apt-get install -y libgtk-3-0
+          sudo apt-get install -y libnss3
+          sudo apt-get install -y libxss1
+          sudo apt-get install -y libasound2
 
       - name: Process next unprocessed car
         run: node processNextCar.js
